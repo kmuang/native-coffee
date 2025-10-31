@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  Alert,
+  Modal,
+  ScrollView,
+} from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 
@@ -9,6 +19,7 @@ interface Product {
   price: number;
   image: string;
   category: string;
+  description: string;
 }
 
 const COFFEE_MENU: Product[] = [
@@ -18,6 +29,7 @@ const COFFEE_MENU: Product[] = [
     price: 2.5,
     image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=60',
     category: 'Hot Drink',
+    description: 'Rich and concentrated espresso shot — bold flavor with caramel notes.',
   },
   {
     id: '2',
@@ -25,6 +37,7 @@ const COFFEE_MENU: Product[] = [
     price: 3.5,
     image: 'https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=60',
     category: 'Hot Drink',
+    description: 'Espresso with steamed milk and thick milk foam — creamy and smooth.',
   },
   {
     id: '3',
@@ -32,6 +45,7 @@ const COFFEE_MENU: Product[] = [
     price: 4.0,
     image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=60',
     category: 'Cold Drink',
+    description: 'Chilled espresso with milk and ice — refreshing and smooth.',
   },
   {
     id: '4',
@@ -39,11 +53,21 @@ const COFFEE_MENU: Product[] = [
     price: 2.25,
     image: 'https://plus.unsplash.com/premium_photo-1661743823829-326b78143b30?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Y3JvaXNhbnR8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=1000',
     category: 'Pastry',
+    description: 'Flaky and buttery French croissant — perfect with coffee.',
+  },
+  {
+    id: '5',
+    name: 'Blueberry Muffin',
+    price: 2.75,
+    image: 'https://images.unsplash.com/photo-1607958996333-41aef7caefaa?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Ymx1ZWJlcnJ5JTIwbXVmZmlufGVufDB8fDB8fHww&auto=format&fit=crop&q=60&w=1400',
+    category: 'Pastry',
+    description: 'Soft muffin loaded with fresh blueberries — sweet and moist.',
   },
 ];
 
 export default function CoffeeShopScreen() {
   const [cart, setCart] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const addToCart = (item: Product) => {
     setCart([...cart, item]);
@@ -60,7 +84,7 @@ export default function CoffeeShopScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <TouchableOpacity style={styles.card} onPress={() => setSelectedProduct(item)}>
             <Image source={{ uri: item.image }} style={styles.image} />
             <View style={styles.info}>
               <Text style={styles.name}>{item.name}</Text>
@@ -70,15 +94,55 @@ export default function CoffeeShopScreen() {
                 <Text style={styles.buttonText}>Add to Cart</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </TouchableOpacity>
         )}
       />
 
+      {/* Footer showing cart */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
           🛒 {cart.length} item{cart.length !== 1 ? 's' : ''} in cart
         </Text>
       </View>
+
+      {/* Product Description Modal */}
+      <Modal
+        visible={!!selectedProduct}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setSelectedProduct(null)}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <ScrollView>
+              {selectedProduct && (
+                <>
+                  <Image source={{ uri: selectedProduct.image }} style={styles.modalImage} />
+                  <Text style={styles.modalName}>{selectedProduct.name}</Text>
+                  <Text style={styles.modalCategory}>{selectedProduct.category}</Text>
+                  <Text style={styles.modalPrice}>${selectedProduct.price.toFixed(2)}</Text>
+                  <Text style={styles.modalDescription}>{selectedProduct.description}</Text>
+                  <TouchableOpacity
+                    style={[styles.button, { marginTop: 20 }]}
+                    onPress={() => {
+                      addToCart(selectedProduct);
+                      setSelectedProduct(null);
+                    }}
+                  >
+                    <Text style={styles.buttonText}>Add to Cart</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, { backgroundColor: '#ccc', marginTop: 10 }]}
+                    onPress={() => setSelectedProduct(null)}
+                  >
+                    <Text style={[styles.buttonText, { color: '#333' }]}>Close</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -102,7 +166,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   list: {
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   card: {
     backgroundColor: '#fff',
@@ -158,5 +222,41 @@ const styles = StyleSheet.create({
   footerText: {
     textAlign: 'center',
     fontWeight: '600',
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    maxHeight: '80%',
+  },
+  modalImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+  },
+  modalName: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginTop: 12,
+  },
+  modalCategory: {
+    color: '#777',
+    marginTop: 2,
+  },
+  modalPrice: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 6,
+  },
+  modalDescription: {
+    marginTop: 10,
+    color: '#555',
+    lineHeight: 20,
   },
 });
